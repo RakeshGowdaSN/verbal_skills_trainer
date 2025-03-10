@@ -15,8 +15,7 @@ The Verbal Skills Trainer is a comprehensive application designed to help users 
 ## Project Structure
 
 verbal_skills_trainer/
-├── .gitignore # Specifies intentionally untracked files that Git should ignore
-├── requirements.txt # Lists the Python packages required to run the application
+
 ├── backend/ # Contains the backend API built with FastAPI
 │ ├── .env # Stores environment-specific variables
 │ ├── config.py # Configures logging
@@ -36,6 +35,9 @@ verbal_skills_trainer/
 │ │ ├── model_generation.py # Generates AI responses using OpenAI
 ├── frontend/ # Contains the frontend interface built with Streamlit
 │ └── app.py # Main application file for the Streamlit frontend
+├── requirements.txt # Lists the Python packages required to run the application
+├── .gitignore # Specifies intentionally untracked files that Git should ignore
+
 
 ## Backend Setup
 
