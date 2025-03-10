@@ -1,0 +1,13 @@
+# Python Virtual Environment
+venv/
+__pycache__/
+
+# Environment Variables
+.env
+
+# Logs
+*.log
+
+# Docker
+*.dockerignore
+Dockerfile

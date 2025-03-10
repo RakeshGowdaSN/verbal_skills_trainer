@@ -1,0 +1,11 @@
+fastapi
+fastapi-cors
+uvicorn
+openai
+python-dotenv
+gtts
+audiorecorder
+requests
+python-multipart
+pytest
+streamlit
