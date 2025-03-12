@@ -1,4 +1,5 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form
+from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -90,49 +91,20 @@ async def voice_input(audio: UploadFile = File(...)):
         audio_bytes = await audio.read()
         transcript = safe_api_call(transcribe_audio, audio_bytes)
         logger.debug(f"Transcribed text: {transcript}")
+
+        # Check if transcription was successful
+        if transcript == "Could not transcribe audio. Please try again later.":
+            logger.error("Transcription failed.")
+            return {"transcript": transcript, "response": "Transcription failed. Please try again."}
+
         # Modified prompt to include vocal delivery analysis
         prompt = f"Analyze this speech transcription:\n{transcript}\nProvide feedback on vocal delivery, including pacing, filler words, and clarity. Also provide general feedback on the content."
-        ai_response = safe_api_call(get_ai_response, prompt, "speech_coach", OPENAI_API_KEY, MODEL_NAME) # Assuming OpenAI for voice
+        ai_response = safe_api_call(get_ai_response, prompt, "speech_coach", OPENAI_API_KEY, MODEL_NAME) 
         logger.debug(f"Voice AI Response: {ai_response}")
         speech_file = text_to_speech(ai_response)
         return {"transcript": transcript, "response": ai_response, "audio_feedback": speech_file}
-    except RateLimitError as e:
-        logger.error(f"Rate limit error: {e}")
-        raise HTTPException(status_code=429, detail="Rate limit exceeded. Please try again later.")
-    except AuthenticationError as e:
-        logger.error(f"Authentication error: {e}")
-        raise HTTPException(status_code=401, detail="Authentication error. Please check your API key.")
-    except BadRequestError as e:
-        logger.error(f"Bad request error: {e}")
-        raise HTTPException(status_code=400, detail="Bad request. Please check your input.")
-    except OpenAIError as e:
-        logger.error(f"OpenAI error: {e}")
-        raise HTTPException(status_code=500, detail="An error occurred with the OpenAI service. Please try again later.")
-    except Exception as e:
-        logger.error(f"An unexpected error occurred: {e}")
-        raise HTTPException(status_code=500, detail="An unexpected error occurred. Please try again later.")
+        # return {"transcript": transcript, "response": ai_response}
 
-@app.post("/assess/")
-async def assess_presentation(text: str = None, audio: UploadFile = None):
-    logger.info("Received presentation assessment request")
-    try:
-        if audio:
-            audio_bytes = await audio.read()
-            presentation_text = safe_api_call(transcribe_audio, audio_bytes)
-            method = "voice"
-            logger.debug("Processing voice presentation")
-        elif text:
-            presentation_text = text
-            method = "text"
-            logger.debug("Processing text presentation")
-        else:
-            logger.error("No input provided for presentation assessment")
-            raise HTTPException(status_code=400, detail="Please provide either text or audio input.")
-
-        feedback = safe_api_call(evaluate_presentation, presentation_text, method)
-        logger.info("Presentation evaluation completed")
-        logger.debug(f"Evaluation feedback: {feedback}")
-        return {"feedback": feedback}
     except RateLimitError as e:
         logger.error(f"Rate limit error: {e}")
         raise HTTPException(status_code=429, detail="Rate limit exceeded. Please try again later.")
@@ -181,6 +153,68 @@ async def train(request: TrainingRequest):
         logger.error(f"An unexpected error occurred: {e}")
         raise HTTPException(status_code=500, detail="An unexpected error occurred. Please try again later.")
     
+@app.post("/assess/text/")
+async def assess_presentation_text(text: str = Form(...)):
+    logger.info("Received text presentation assessment request")
+    try:
+        presentation_text = text
+        method = "text"
+        logger.debug("Processing text presentation")
+
+        feedback = safe_api_call(evaluate_presentation, presentation_text, method)
+        logger.info("Presentation evaluation completed")
+        logger.debug(f"Evaluation feedback: {feedback}")
+        return {"feedback": feedback}
+    except RateLimitError as e:
+        logger.error(f"Rate limit error: {e}")
+        raise HTTPException(status_code=429, detail="Rate limit exceeded. Please try again later.")
+    except AuthenticationError as e:
+        logger.error(f"Authentication error: {e}")
+        raise HTTPException(status_code=401, detail="Authentication error. Please check your API key.")
+    except BadRequestError as e:
+        logger.error(f"Bad request error: {e}")
+        raise HTTPException(status_code=400, detail="Bad request. Please check your input.")
+    except OpenAIError as e:
+        logger.error(f"OpenAI error: {e}")
+        raise HTTPException(status_code=500, detail="An error occurred with the OpenAI service. Please try again later.")
+    except Exception as e:
+        logger.error(f"An unexpected error occurred: {e}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred. Please try again later.")
+
+@app.post("/assess/voice/")
+async def assess_presentation_voice(audio: UploadFile = File(...)):
+    logger.info("Received voice presentation assessment request")
+    try:
+        audio_bytes = await audio.read()
+        presentation_text = safe_api_call(transcribe_audio, audio_bytes)
+        method = "voice"
+        logger.debug("Processing voice presentation")
+
+        # Check if transcription was successful
+        if presentation_text == "Could not transcribe audio. Please try again later.":
+            logger.error("Transcription failed.")
+            return {"feedback": "Transcription failed. Please try again."}
+
+        feedback = safe_api_call(evaluate_presentation, presentation_text, method)
+        logger.info("Presentation evaluation completed")
+        logger.debug(f"Evaluation feedback: {feedback}")
+        return {"feedback": feedback}
+    except RateLimitError as e:
+        logger.error(f"Rate limit error: {e}")
+        raise HTTPException(status_code=429, detail="Rate limit exceeded. Please try again later.")
+    except AuthenticationError as e:
+        logger.error(f"Authentication error: {e}")
+        raise HTTPException(status_code=401, detail="Authentication error. Please check your API key.")
+    except BadRequestError as e:
+        logger.error(f"Bad request error: {e}")
+        raise HTTPException(status_code=400, detail="Bad request. Please check your input.")
+    except OpenAIError as e:
+        logger.error(f"OpenAI error: {e}")
+        raise HTTPException(status_code=500, detail="An error occurred with the OpenAI service. Please try again later.")
+    except Exception as e:
+        logger.error(f"An unexpected error occurred: {e}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred. Please try again later.")
+
 @app.get("/audio/{filename}")
 async def get_audio(filename: str):
     """Serve audio files."""

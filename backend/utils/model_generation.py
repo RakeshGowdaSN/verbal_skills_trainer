@@ -3,6 +3,7 @@ from utils.constants import MODEL_NAME, OPENAI_API_KEY
 from prompts.prompt_templates import PROMPTS
 from utils.database import save_user_progress
 from config import logger
+import io
 
 # client = openai.OpenAI(
 #     api_key=OPENAI_API_KEY,
@@ -59,11 +60,17 @@ def transcribe_audio(audio_data: bytes) -> str:
     """Transcribe audio using Whisper API."""
 
     try:
+        # Create a BytesIO object from the audio bytes
+        audio_file = io.BytesIO(audio_data)
+        audio_file.name = "audio.mp3"  # Set a filename (important for Whisper)
+        audio_file.seek(0)  # Reset the file pointer to the beginning
+
         response = client.audio.transcriptions.create(
             model="whisper-1",
-            file=audio_data,
+            file=audio_file,
             response_format="text"
         )
+        logger.debug(f"transcribe audio response: {response}")
         return response
     except openai.OpenAIError as e:
         logger.error(f"OpenAI error: {e}")
