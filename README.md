@@ -13,6 +13,7 @@ The Verbal Skills Trainer is a comprehensive application designed to help users 
 -   **Audio Feedback:** Receive AI-generated audio feedback to enhance learning.
 
 ## Project Structure
+```
 
 verbal_skills_trainer/
 ├── backend/ # Contains the backend API built with FastAPI
@@ -36,6 +37,7 @@ verbal_skills_trainer/
 ├── requirements.txt # Lists the Python packages required to run the application
 ├── .gitignore # Specifies intentionally untracked files that Git should ignore
 
+```
 
 ## Backend Setup
 
